@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Salsa Vizcaína · Master Challenge</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* === Salsa Vizcaína · Gama Roja === */
+      --bg:           #100808;
+      --surface:      #1e0d0d;
+      --surface2:     #2a1010;
+      --surface3:     #361414;
+      --border:       rgba(255,100,80,0.08);
+      --border2:      rgba(255,100,80,0.17);
+
+      /* Rojo vizcaína — accent principal */
+      --accent:       #e03a2f;
+      --accent-dim:   rgba(224,58,47,0.14);
+      --accent-glow:  rgba(224,58,47,0.42);
+
+      /* Rojo pimiento — secundario */
+      --teal:         #f97060;
+      --teal-dim:     rgba(249,112,96,0.13);
+
+      /* Naranja cobrizo — gold role */
+      --gold:         #fb923c;
+      --gold-dim:     rgba(251,146,60,0.15);
+
+      /* Feedback */
+      --green:        #34d399;
+      --green-dim:    rgba(52,211,153,0.13);
+      --red:          #ef4444;
+      --red-dim:      rgba(239,68,68,0.18);
+
+      --blue:         #fca5a5;
+      --text:         #f5e8e8;
+      --text-muted:   #8a6060;
+      --radius:       20px;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Sora',sans-serif; -webkit-tap-highlight-color:transparent; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Dot grid */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+    }
+
+    /* Top glow — BFL teal */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -150px; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 500px;
+      background: radial-gradient(ellipse, rgba(224,58,47,0.09) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    /* ===== SCREENS ===== */
+    .screen {
+      position: fixed; inset: 0;
+      display: flex; justify-content: center; align-items: center;
+      padding: 20px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.4s ease;
+      overflow-y: auto;
+    }
+    .screen.active { opacity: 1; pointer-events: all; }
+
+    /* ============================================================
+       START SCREEN
+    ============================================================ */
+    .start-box { text-align: center; max-width: 400px; width: 100%; }
+
+    /* Logos */
+    .logos-wrap {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; margin-bottom: 20px; width: 100%; padding: 0 4px;
+    }
+    
+    .logo-bfl { height: 56px; width: auto; flex-shrink: 0; margin-left: auto; object-fit: contain; }
+    .logo-eshbi { height: 56px; width: auto; flex-shrink: 0; object-fit: contain; }
+    .logo-sep { width:1px; height:32px; background: rgba(255,255,255,0.15); }
+
+    .logo-mark { font-size: 2.4rem; margin-bottom: 4px; display: block; }
+
+    .start-box h1 {
+      font-size: 1.75rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px;
+      background: linear-gradient(135deg, var(--accent), var(--teal));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .start-box .tagline { color: var(--text-muted); font-size: 0.82rem; margin-bottom: 18px; }
+
+    /* Mastery ring */
+    .mastery-row {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: 16px; padding: 14px 16px; margin-bottom: 10px;
+    }
+    .ring-wrap { position: relative; width: 46px; height: 46px; flex-shrink: 0; }
+    .ring-wrap svg { width: 46px; height: 46px; transform: rotate(-90deg); }
+    .ring-bg { fill: none; stroke: var(--surface3); stroke-width: 4; }
+    .ring-fg { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1); }
+    .ring-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 800; color: var(--accent); }
+    .mastery-info { flex: 1; text-align: left; }
+    .mastery-info .mi-t { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .mastery-info .mi-s { font-size: 0.7rem; color: var(--text-muted); }
+
+    /* Level row */
+    .level-row {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 14px; margin-bottom: 10px;
+    }
+    .lv-badge {
+      font-size: 0.68rem; font-weight: 800;
+      color: var(--gold); background: var(--gold-dim);
+      border: 1px solid rgba(255,217,61,0.25);
+      padding: 3px 9px; border-radius: 8px; white-space: nowrap;
+    }
+    .xp-track { flex:1; height:5px; background:var(--surface); border-radius:10px; overflow:hidden; }
+    .xp-fill { height:100%; background:linear-gradient(90deg,var(--gold),#ff9a3c); border-radius:10px; transition:width 0.7s ease; }
+    .xp-lbl { font-size:0.68rem; font-weight:700; color:var(--text-muted); white-space:nowrap; }
+
+    /* Difficulty selector */
+    .diff-selector { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+    .diff-btn {
+      background:var(--surface2); border:1.5px solid var(--border);
+      border-radius:14px; padding:12px 4px; cursor:pointer;
+      transition:all 0.2s; display:flex; flex-direction:column;
+      align-items:center; gap:3px;
+    }
+    .diff-btn .d-icon { font-size:1.2rem; }
+    .diff-btn .d-name { font-size:0.76rem; font-weight:700; color:var(--text); }
+    .diff-btn .d-desc { font-size:0.6rem; color:var(--text-muted); }
+    .diff-btn.selected { border-color:var(--accent); background:var(--accent-dim); }
+    .diff-btn.selected .d-name { color:var(--accent); }
+
+    /* Game mode */
+    .type-selector { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+    .type-btn {
+      background:var(--surface2); border:1.5px solid var(--border);
+      border-radius:14px; padding:14px 6px; cursor:pointer;
+      transition:all 0.2s; display:flex; flex-direction:column;
+      align-items:center; gap:3px;
+    }
+    .type-btn .t-icon { font-size:1.3rem; }
+    .type-btn .t-name { font-size:0.78rem; font-weight:700; color:var(--text); }
+    .type-btn .t-desc { font-size:0.63rem; color:var(--text-muted); }
+    .type-btn.selected { border-color:var(--teal); background:var(--teal-dim); }
+    .type-btn.selected .t-name { color:var(--teal); }
+
+    .start-btn {
+      width:100%; padding:17px;
+      background: linear-gradient(135deg, var(--accent), var(--teal));
+      color:#fff; border:none; border-radius:var(--radius);
+      font-size:1rem; font-weight:800;
+      cursor:pointer; transition:all 0.2s;
+      font-family:'Sora',sans-serif;
+      box-shadow:0 0 30px var(--accent-glow);
+      margin-bottom:12px;
+    }
+    .start-btn:hover { transform:translateY(-2px); box-shadow:0 0 45px var(--accent-glow); }
+    .start-btn:active { transform:scale(0.98); }
+
+    .start-stats { display:flex; gap:8px; }
+    .ss-stat {
+      flex:1; background:var(--surface2); border:1px solid var(--border);
+      border-radius:12px; padding:10px 6px; text-align:center;
+    }
+    .ss-stat .v { font-size:1.1rem; font-weight:800; color:var(--accent); }
+    .ss-stat .l { font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:2px; }
+
+    /* ============================================================
+       GAME SCREEN
+    ============================================================ */
+    .game-box { width:100%; max-width:420px; }
+
+    /* HUD */
+    .hud { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .hud-left { display:flex; align-items:center; gap:8px; }
+    .lives { display:flex; gap:5px; font-size:1.1rem; }
+    .life { transition:all 0.3s; }
+    .life.lost { opacity:0.15; filter:grayscale(1); transform:scale(0.7); }
+    .mastered-pill {
+      background:var(--accent-dim); border:1px solid rgba(61,191,191,0.25);
+      border-radius:100px; padding:4px 10px;
+      font-size:0.7rem; font-weight:700; color:var(--accent); white-space:nowrap;
+    }
+    .score-val { font-size:1.3rem; font-weight:800; color:var(--gold); }
+    .streak-pill {
+      background:var(--teal-dim); border:1px solid rgba(46,184,192,0.2);
+      border-radius:100px; padding:4px 10px;
+      font-size:0.7rem; font-weight:700; color:var(--teal);
+      transition:all 0.3s; white-space:nowrap;
+    }
+    .streak-pill.hot {
+      background:rgba(255,100,0,0.14); border-color:#ff6400;
+      color:#ff9a3c; box-shadow:0 0 10px rgba(255,100,0,0.25);
+    }
+
+    /* Progress */
+    .prog-row { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+    .prog-bar { flex:1; height:4px; background:var(--surface2); border-radius:10px; overflow:hidden; }
+    .prog-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--teal)); width:0%; transition:width 0.6s ease; border-radius:10px; }
+    .prog-text { font-size:0.67rem; font-weight:700; color:var(--text-muted); min-width:40px; text-align:right; }
+
+    /* XP mini */
+    .xp-mini-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+    .xp-mini-bar { flex:1; height:2px; background:var(--surface2); border-radius:10px; overflow:hidden; }
+    .xp-mini-fill { height:100%; background:linear-gradient(90deg,var(--gold),#ff9a3c); width:0%; transition:width 0.6s ease; border-radius:10px; }
+    .xp-mini-lbl { font-size:0.62rem; font-weight:700; color:var(--text-muted); white-space:nowrap; }
+
+    /* Timer bar */
+    .timer-row { margin-bottom:10px; }
+    .timer-track { height:3px; background:var(--surface2); border-radius:10px; overflow:hidden; }
+    .timer-bar { height:100%; background:linear-gradient(90deg,var(--teal),var(--accent)); border-radius:10px; transition:width linear; }
+    .timer-bar.urgent { background:linear-gradient(90deg,var(--gold),var(--red)); animation:timerPulse 0.5s ease-in-out infinite; }
+    @keyframes timerPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+    /* Card */
+    .card-wrap { perspective:900px; margin-bottom:16px; }
+    .card {
+      background:var(--surface); border:1px solid var(--border2);
+      border-radius:24px; padding:32px 24px 28px;
+      text-align:center; position:relative; overflow:hidden;
+    }
+    .card::before {
+      content:''; position:absolute; top:0; left:20%; right:20%; height:1px;
+      background:linear-gradient(90deg,transparent,var(--teal),transparent);
+      opacity:0.4;
+    }
+    .card.pop { animation:cardPop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes cardPop { 0%{transform:scale(0.93) translateY(8px);opacity:0.5} 100%{transform:scale(1) translateY(0);opacity:1} }
+    .card.shake { animation:shake 0.4s ease; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+
+    .card-cat {
+      display:inline-block; font-size:0.6rem; font-weight:700;
+      letter-spacing:1.5px; text-transform:uppercase;
+      background:var(--accent-dim); border:1px solid rgba(61,191,191,0.2);
+      color:var(--accent); border-radius:100px; padding:3px 10px; margin-bottom:10px;
+    }
+    .card-num { font-size:0.58rem; text-transform:uppercase; letter-spacing:3px; color:var(--text-muted); font-weight:600; margin-bottom:10px; }
+    .card-word {
+      font-size:clamp(1rem,4.5vw,1.35rem); font-weight:700;
+      color:var(--text); line-height:1.45; margin-bottom:4px;
+    }
+    .card-reveal { font-size:0.82rem; color:var(--teal); font-weight:600; opacity:0; transition:opacity 0.3s; min-height:22px; margin-top:6px; }
+    .card-reveal.show { opacity:1; }
+
+    /* Options 2x2 grid */
+    .options-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:8px; }
+    .btn-opt {
+      background:var(--surface); border:1.5px solid var(--border2);
+      padding:14px 10px; border-radius:15px;
+      font-size:0.85rem; font-weight:600; color:var(--text);
+      cursor:pointer; transition:all 0.15s cubic-bezier(0.4,0,0.2,1);
+      width:100%; text-align:center; font-family:'Sora',sans-serif;
+      position:relative; min-height:54px;
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
+      line-height:1.3;
+    }
+    .btn-opt .kh { position:absolute; top:5px; left:7px; font-size:0.52rem; font-weight:800; color:var(--text-muted); opacity:0.4; }
+    .btn-opt:hover:not(:disabled) { border-color:var(--accent); background:var(--accent-dim); transform:translateY(-2px); }
+    .btn-opt:active:not(:disabled) { transform:scale(0.97); }
+    .btn-opt.correct { background:rgba(0,229,160,0.16); border-color:var(--green); color:var(--green); }
+    .btn-opt.wrong { background:var(--red-dim); border-color:var(--red); color:var(--red); }
+    .btn-opt:disabled { cursor:default; }
+
+    /* ============================================================
+       END SCREEN
+    ============================================================ */
+    .end-box { text-align:center; max-width:380px; width:100%; }
+    .end-logos {
+      display:flex; align-items:center; justify-content:space-between;
+      gap:0; margin-bottom:16px; opacity:0.7; width:100%;
+    }
+    .end-logos .logo-bfl  { height:44px; width:auto; margin-left:auto; object-fit:contain; }
+    .end-logos .logo-eshbi { height:44px; width:auto; object-fit:contain; }
+    .end-logos .logo-bfl  { height:44px; width:auto; margin-left:auto; object-fit:contain; }
+    .end-logos .logo-sep { height:22px; }
+    .end-icon { font-size:3.5rem; margin-bottom:8px; }
+    .end-box h2 { font-size:1.8rem; font-weight:800; margin-bottom:4px; }
+    .end-box .end-msg { color:var(--text-muted); font-size:0.85rem; margin-bottom:20px; }
+
+    .end-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+    .end-stat { background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:14px 8px; }
+    .end-stat .v { font-size:1.4rem; font-weight:800; color:var(--accent); }
+    .end-stat .l { font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:2px; }
+
+    .xp-banner {
+      background:var(--gold-dim); border:1px solid rgba(255,217,61,0.2);
+      border-radius:13px; padding:13px; margin-bottom:12px;
+    }
+    .xp-banner .xg { font-size:1.25rem; font-weight:800; color:var(--gold); }
+    .xp-banner .xl { font-size:0.72rem; color:var(--text-muted); margin-top:2px; }
+
+    .failed-panel {
+      background:var(--surface2); border:1px solid rgba(255,77,109,0.2);
+      border-radius:14px; padding:14px; margin-bottom:12px;
+      text-align:left; display:none;
+    }
+    .failed-panel.show { display:block; }
+    .fp-title { font-size:0.7rem; font-weight:800; color:var(--red); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
+    .failed-list { display:flex; flex-wrap:wrap; gap:6px; }
+    .failed-tag {
+      background:var(--red-dim); border:1px solid rgba(255,77,109,0.2);
+      border-radius:8px; padding:4px 10px;
+      font-size:0.75rem; font-weight:600; color:var(--red);
+    }
+
+    .btn-primary {
+      width:100%; padding:15px;
+      background: linear-gradient(135deg, var(--accent), var(--teal));
+      color:#fff; border:none; border-radius:var(--radius);
+      font-family:'Sora',sans-serif; font-size:0.95rem; font-weight:800;
+      cursor:pointer; transition:all 0.2s;
+      box-shadow:0 0 25px var(--accent-glow); margin-bottom:8px;
+    }
+    .btn-primary:hover { transform:translateY(-2px); }
+    .btn-ghost {
+      width:100%; padding:13px; background:transparent; color:var(--text-muted);
+      border:1.5px solid var(--border2); border-radius:var(--radius);
+      font-family:'Sora',sans-serif; font-size:0.85rem; font-weight:600;
+      cursor:pointer; transition:all 0.2s;
+    }
+    .btn-ghost:hover { border-color:var(--text-muted); color:var(--text); }
+
+    /* ===== LEVEL UP ===== */
+    .lvup-overlay {
+      position:fixed; inset:0; z-index:500;
+      display:flex; flex-direction:column; justify-content:center; align-items:center; gap:6px;
+      pointer-events:none; opacity:0;
+      background:radial-gradient(circle, rgba(61,191,191,0.10) 0%, transparent 70%);
+    }
+    .lvup-overlay.show { animation:lvAnim 2.2s ease-out forwards; }
+    @keyframes lvAnim { 0%{opacity:0} 15%{opacity:1} 75%{opacity:1} 100%{opacity:0} }
+    .lu-e { font-size:3.5rem; animation:luB 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.15s both; }
+    @keyframes luB { 0%{transform:scale(0)} 100%{transform:scale(1)} }
+    .lu-t { font-size:0.65rem; font-weight:800; letter-spacing:5px; text-transform:uppercase; color:var(--accent); }
+    .lu-l { font-size:2.8rem; font-weight:800; color:var(--accent); text-shadow:0 0 28px var(--accent-glow); letter-spacing:-1px; }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position:fixed; top:18px; left:50%;
+      transform:translateX(-50%) translateY(-65px);
+      background:var(--surface2); border:1px solid var(--border);
+      border-radius:100px; padding:8px 18px;
+      font-size:0.8rem; font-weight:700;
+      transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      z-index:200; white-space:nowrap;
+    }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+    .toast.good   { color:var(--green);  border-color:rgba(0,229,160,0.4); }
+    .toast.bad    { color:var(--red);    border-color:rgba(255,77,109,0.4); }
+    .toast.info   { color:var(--gold);   border-color:rgba(255,217,61,0.35); }
+
+    /* ===== PARTICLES ===== */
+    .particle { position:fixed; pointer-events:none; border-radius:50%; animation:floatUp 0.85s ease-out forwards; }
+    @keyframes floatUp { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-90px) scale(0.2)} }
+
+    /* ===== CONFETTI ===== */
+    .cf { position:fixed; top:-10px; pointer-events:none; animation:cfFall 2.4s ease-in forwards; }
+    @keyframes cfFall {
+      0%{transform:translateY(0) rotate(0deg) scaleX(1);opacity:1}
+      50%{transform:translateY(50vh) rotate(380deg) scaleX(-1);opacity:1}
+      100%{transform:translateY(108vh) rotate(720deg) scaleX(1);opacity:0}
+    }
+
+    /* ===== COMBO BURST ===== */
+    .combo-burst {
+      position:fixed; top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      font-size:2.2rem; font-weight:800; color:var(--gold);
+      pointer-events:none; z-index:300;
+      animation:cPop 0.75s ease-out forwards;
+      text-shadow:0 0 18px rgba(255,217,61,0.7);
+    }
+    @keyframes cPop {
+      0%{opacity:0;transform:translate(-50%,-50%) scale(0.4)}
+      30%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}
+      70%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+      100%{opacity:0;transform:translate(-50%,-65%) scale(0.9)}
+    }
+
+    .surv-badge {
+      display:inline-flex; align-items:center; gap:4px;
+      background:var(--red-dim); border:1px solid rgba(255,77,109,0.3);
+      color:var(--red); border-radius:100px;
+      padding:4px 10px; font-size:0.68rem; font-weight:700;
+    }
+
+    @media (max-width:380px) { .card-word { font-size:0.95rem; } }
+  </style>
+<style>
+  /* ===== IMPROVED GAMEPLAY STYLES ===== */
+
+  /* Answer buttons - larger tap area on mobile */
+  .btn-opt {
+    min-height: 62px !important;
+    font-size: 0.88rem !important;
+    transition: all 0.12s cubic-bezier(0.4,0,0.2,1) !important;
+    user-select: none;
+  }
+
+  /* Correct answer pulse */
+  .btn-opt.correct {
+    animation: correctPulse 0.5s ease forwards !important;
+  }
+  @keyframes correctPulse {
+    0%  { transform: scale(1); box-shadow: 0 0 0 0 rgba(224,58,47,0.6); }
+    40% { transform: scale(1.04); box-shadow: 0 0 0 12px rgba(45,212,191,0); }
+    100%{ transform: scale(1); box-shadow: none; }
+  }
+
+  /* Wrong answer shake */
+  .btn-opt.wrong {
+    animation: wrongShake 0.35s ease forwards !important;
+  }
+  @keyframes wrongShake {
+    0%,100%{ transform:translateX(0) }
+    20%{ transform:translateX(-6px) }
+    40%{ transform:translateX(6px) }
+    60%{ transform:translateX(-4px) }
+    80%{ transform:translateX(4px) }
+  }
+
+  /* Timeout indicator */
+  .timer-bar.urgent {
+    animation: timerPulse 0.4s ease-in-out infinite !important;
+    box-shadow: 0 0 8px var(--red);
+  }
+
+  /* Card flip for new question */
+  .card.pop {
+    animation: cardPop 0.35s cubic-bezier(0.34,1.56,0.64,1) !important;
+  }
+
+  /* Sound toggle button */
+  .sound-toggle {
+    position: fixed; bottom: 16px; right: 16px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 50%; width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 1.1rem; z-index: 100;
+    transition: all 0.2s; opacity: 0.7;
+  }
+  .sound-toggle:hover { opacity: 1; transform: scale(1.1); }
+  .sound-toggle.muted { opacity: 0.4; }
+
+  /* Question category badge animation */
+  .card-cat { animation: badgeFade 0.3s ease; }
+  @keyframes badgeFade { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+
+  /* Options appear staggered */
+  .btn-opt:nth-child(1) { animation: optIn 0.25s 0.05s ease both; }
+  .btn-opt:nth-child(2) { animation: optIn 0.25s 0.10s ease both; }
+  .btn-opt:nth-child(3) { animation: optIn 0.25s 0.15s ease both; }
+  .btn-opt:nth-child(4) { animation: optIn 0.25s 0.20s ease both; }
+  @keyframes optIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+  /* ===== ESHBI NATIVE LOGO ===== */
+  .logo-eshbi-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .eshbi-letters {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 1.9rem;
+    line-height: 1;
+    letter-spacing: -1px;
+    color: #e8edf5;
+  }
+  .eshbi-letters .eshbi-h {
+    color: #e03a2f;
+  }
+  .eshbi-sub {
+    font-family: 'Sora', sans-serif;
+    font-size: 0.42rem;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #6b7a99;
+    line-height: 1.5;
+    margin-top: 2px;
+    text-align: left;
+  }
+
+  /* ===== BFL LOGO + TEXT ===== */
+  .logo-bfl-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .logo-bfl { height: 56px; width: auto; flex-shrink: 0; object-fit: contain; }
+  .bfl-text-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  .bfl-line {
+    font-family: 'Sora', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 300;
+    letter-spacing: 2.5px;
+    color: #c8d0e0;
+    line-height: 1.25;
+    text-transform: uppercase;
+  }
+  .bfl-food {
+    font-weight: 800;
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(255,255,255,0.3);
+  }
+</style>
+</head>
+<body>
+
+<!-- Sound Toggle -->
+<button class="sound-toggle" id="soundToggle" onclick="toggleSound()" title="Activar/desactivar sonido">🔊</button>
+
+<!-- Level Up -->
+<div class="lvup-overlay" id="lvupOverlay">
+  <div class="lu-e">⭐</div>
+  <div class="lu-t">¡Subida de nivel!</div>
+  <div class="lu-l" id="luLvl">Nivel 2</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ============================================================
+     START SCREEN
+============================================================ -->
+<div class="screen active" id="scrStart">
+  <div class="start-box">
+
+    <div class="logos-wrap">
+      <div class="logo-eshbi-wrap">
+      <span class="eshbi-letters">ES<span class="eshbi-h">H</span>BI</span>
+      <span class="eshbi-sub">Escuela Superior<br>de Hostelería Bilbao</span>
+    </div>
+    </div>
+
+    <h1>Salsa Vizcaína</h1>
+    <p class="tagline">30 preguntas de historia y técnica · ¿cuánto sabes?</p>
+
+    <!-- Mastery ring -->
+    <div class="mastery-row">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 46 46">
+          <circle class="ring-bg" cx="23" cy="23" r="19"/>
+          <circle class="ring-fg" id="ringFg" cx="23" cy="23" r="19"
+            stroke-dasharray="119.4" stroke-dashoffset="119.4"/>
+        </svg>
+        <div class="ring-label" id="ringLabel">0%</div>
+      </div>
+      <div class="mastery-info">
+        <div class="mi-t" id="masteryTitle">Empieza el desafío</div>
+        <div class="mi-s" id="masterySub">0 de 30 preguntas dominadas</div>
+      </div>
+    </div>
+
+    <!-- XP / Level -->
+    <div class="level-row">
+      <div class="lv-badge" id="startLvBadge">Nv. 1</div>
+      <div class="xp-track"><div class="xp-fill" id="startXpFill" style="width:0%"></div></div>
+      <div class="xp-lbl" id="startXpLbl">0 XP</div>
+    </div>
+
+    <!-- Difficulty -->
+    <div class="diff-selector">
+      <div class="diff-btn" id="diffEasy" onclick="setDiff('easy')">
+        <span class="d-icon">🟢</span>
+        <span class="d-name">Fácil</span>
+        <span class="d-desc">30 seg</span>
+      </div>
+      <div class="diff-btn selected" id="diffNormal" onclick="setDiff('normal')">
+        <span class="d-icon">🟡</span>
+        <span class="d-name">Normal</span>
+        <span class="d-desc">20 seg</span>
+      </div>
+      <div class="diff-btn" id="diffChef" onclick="setDiff('chef')">
+        <span class="d-icon">🔴</span>
+        <span class="d-name">Chef</span>
+        <span class="d-desc">12 seg</span>
+      </div>
+    </div>
+
+    <!-- Game type -->
+    <div class="type-selector">
+      <div class="type-btn selected" id="typeFlash" onclick="setType('flash')">
+        <span class="t-icon">⚡</span>
+        <span class="t-name">Flash</span>
+        <span class="t-desc">4 opciones</span>
+      </div>
+      <div class="type-btn" id="typeSudden" onclick="setType('sudden')">
+        <span class="t-icon">💀</span>
+        <span class="t-name">Sudden Death</span>
+        <span class="t-desc">1 fallo = fin</span>
+      </div>
+      <div class="type-btn" id="typeRanked" onclick="setType('ranked')">
+        <span class="t-icon">🏆</span>
+        <span class="t-name">Ranking</span>
+        <span class="t-desc">Todas · récord</span>
+      </div>
+    </div>
+
+    <button class="start-btn" onclick="soundClick();startGame()">EMPEZAR DESAFÍO →</button>
+
+    <div class="start-stats">
+      <div class="ss-stat">
+        <div class="v" id="sXP">0</div>
+        <div class="l">XP total</div>
+      </div>
+      <div class="ss-stat">
+        <div class="v" id="sBest">0</div>
+        <div class="l">Racha máx.</div>
+      </div>
+      <div class="ss-stat">
+        <div class="v" id="sSess">0</div>
+        <div class="l">Partidas</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     GAME SCREEN
+============================================================ -->
+<div class="screen" id="scrGame">
+  <div class="game-box">
+
+    <div class="hud">
+      <div class="hud-left">
+        <div class="lives" id="livesEl">
+          <span class="life">❤️</span>
+          <span class="life">❤️</span>
+          <span class="life">❤️</span>
+        </div>
+        <div class="mastered-pill" id="masteredPill">✓ 0/30</div>
+      </div>
+      <div class="score-val" id="scoreEl">0</div>
+      <div class="streak-pill" id="streakEl">🎯</div>
+    </div>
+
+    <div class="prog-row">
+      <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
+      <div class="prog-text" id="progText">0/30</div>
+    </div>
+
+    <div class="xp-mini-row">
+      <div class="xp-mini-lbl" id="xpMiniLv">Nv.1</div>
+      <div class="xp-mini-bar"><div class="xp-mini-fill" id="xpMiniBar"></div></div>
+      <div class="xp-mini-lbl" id="xpMiniVal">0xp</div>
+    </div>
+
+    <div class="timer-row">
+      <div class="timer-track"><div class="timer-bar" id="timerBar"></div></div>
+    </div>
+
+    <div class="card-wrap">
+      <div class="card" id="mainCard">
+        <div class="card-cat" id="cardCat">🫙 Historia</div>
+        <div class="card-num" id="cardNum">PREGUNTA 1 / 30</div>
+        <div class="card-word" id="cardWord">...</div>
+        <div class="card-reveal" id="cardReveal"></div>
+      </div>
+    </div>
+
+    <div class="options-grid" id="optGrid">
+      <button class="btn-opt" onclick="soundClick();check(0)" id="btn0"><span class="kh">1</span></button>
+      <button class="btn-opt" onclick="soundClick();check(1)" id="btn1"><span class="kh">2</span></button>
+      <button class="btn-opt" onclick="soundClick();check(2)" id="btn2"><span class="kh">3</span></button>
+      <button class="btn-opt" onclick="soundClick();check(3)" id="btn3"><span class="kh">4</span></button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     END SCREEN
+============================================================ -->
+<div class="screen" id="scrEnd">
+  <div class="end-box">
+
+    <div class="end-logos">
+      <div class="logo-eshbi-wrap">
+      <span class="eshbi-letters">ES<span class="eshbi-h">H</span>BI</span>
+      <span class="eshbi-sub">Escuela Superior<br>de Hostelería Bilbao</span>
+    </div>
+    </div>
+
+    <div class="end-icon" id="endIcon">🏆</div>
+    <h2 id="endTitle">¡Completado!</h2>
+    <p class="end-msg" id="endMsg">Sesión completada</p>
+
+    <div class="end-stats">
+      <div class="end-stat"><div class="v" id="endScore">0</div><div class="l">Puntos</div></div>
+      <div class="end-stat"><div class="v" id="endStreak">0</div><div class="l">Racha máx.</div></div>
+      <div class="end-stat"><div class="v" id="endAcc">0%</div><div class="l">Precisión</div></div>
+    </div>
+
+    <div class="xp-banner">
+      <div class="xg" id="endXP">+0 XP</div>
+      <div class="xl" id="endXPSub">XP ganado esta sesión</div>
+    </div>
+
+    <div class="failed-panel" id="failedPanel">
+      <div class="fp-title">⚠️ Preguntas a repasar</div>
+      <div class="failed-list" id="failedList"></div>
+    </div>
+
+    <button class="btn-primary" onclick="restartSame()">▶ Repetir modo</button>
+    <button class="btn-ghost" onclick="goHome()">← Cambiar modo</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SOUND SYSTEM (Web Audio API)
+// ============================================================
+let soundEnabled = true;
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  const btn = document.getElementById('soundToggle');
+  btn.textContent = soundEnabled ? '🔊' : '🔇';
+  btn.classList.toggle('muted', !soundEnabled);
+}
+
+function playTone(freq, type, duration, vol=0.3, delay=0) {
+  if (!soundEnabled) return;
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type; osc.frequency.value = freq;
+    const start = ctx.currentTime + delay;
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(vol, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+    osc.start(start); osc.stop(start + duration + 0.05);
+  } catch(e) {}
+}
+
+function soundCorrect() {
+  playTone(523, 'sine', 0.12, 0.25);
+  playTone(659, 'sine', 0.12, 0.25, 0.10);
+  playTone(784, 'sine', 0.18, 0.25, 0.20);
+}
+
+function soundWrong() {
+  playTone(220, 'sawtooth', 0.08, 0.2);
+  playTone(180, 'sawtooth', 0.15, 0.2, 0.07);
+}
+
+function soundTimeout() {
+  playTone(330, 'triangle', 0.12, 0.2);
+  playTone(260, 'triangle', 0.18, 0.2, 0.10);
+}
+
+function soundStreak() {
+  // Ascending fanfare
+  [523,659,784,1046].forEach((f,i) => playTone(f,'sine',0.15,0.28,i*0.08));
+}
+
+function soundLevelUp() {
+  [523,659,784,1046,1318].forEach((f,i) => playTone(f,'sine',0.2,0.3,i*0.07));
+}
+
+function soundClick() {
+  playTone(440, 'sine', 0.06, 0.12);
+}
+
+
+// ============================================================
+// DATA: [pregunta, [opA, opB, opC, opD], respuestaIdx(0-3), categoría]
+// ============================================================
+const QS = [
+  ["¿Cuál es la base fundamental de la salsa vizcaína?",
+   ["Tomate y ajo","Cebolla, pimiento choricero y una grasa","Pimiento verde y harina","Mantequilla y vino blanco"],1,"🫙 Fundamentos"],
+  ["¿Qué tipo de grasa vegetal ha predominado históricamente en la salsa vizcaína?",
+   ["Aceite de girasol","Aceite de oliva","Manteca de cerdo","Mantequilla"],1,"🫙 Fundamentos"],
+  ["¿A partir de qué año se popularizó el uso del pimiento choricero en la salsa vizcaína?",
+   ["1845","1865","1892","1903"],2,"📜 Historia"],
+  ["¿Qué tipo de cebolla se considera genuina para esta salsa desde el primer tercio del siglo XX?",
+   ["Cebolla blanca","Cebolla amarilla","Cebolla roja","Cebolla chalota"],2,"🫙 Fundamentos"],
+  ["¿Qué se añade a veces para neutralizar el amargor del pimiento choricero?",
+   ["Vinagre","Azúcar","Limón","Sal gruesa"],1,"👨‍🍳 Técnica"],
+  ["¿Cuántas horas se necesita cocinar la cebolla correctamente para la salsa tradicional?",
+   ["1-2 horas","2-3 horas","4-5 horas","6-7 horas"],2,"👨‍🍳 Técnica"],
+  ["¿Qué plato emblemático ha difundido más la salsa vizcaína?",
+   ["Merluza en salsa verde","Bacalao a la vizcaína","Besugo al horno","Atún encebollado"],1,"📜 Historia"],
+  ["¿Qué escritor diferenció entre salsa vizcaína 'trisílaba' (verde) y 'cuadrisílaba' (roja)?",
+   ["Sabino Arana","Miguel de Unamuno","Pío Baroja","Emilia Pardo Bazán"],1,"📜 Historia"],
+  ["¿Qué ingrediente aparece en 18 de 24 recetas analizadas entre 1845 y 1896?",
+   ["Ajo","Tomate","Pan","Vino blanco"],1,"📜 Historia"],
+  ["¿Qué pimiento seco típico de Murcia y Levante es similar al choricero?",
+   ["Pimiento morrón","Pimiento de Gernika","Ñora","Pimiento de Calahorra"],2,"🌶️ Ingredientes"],
+  ["¿Qué elemento espesante poco común usaba la Academia Casi (1946)?",
+   ["Harina de maíz","Galletas María","Sémola","Fécula de patata"],1,"📜 Historia"],
+  ["¿Qué producto traído de América por Colón resultó clave para esta salsa?",
+   ["Maíz","Patata","Pimiento","Tomate"],2,"📜 Historia"],
+  ["¿Quién documentó en 1881 que el pimiento choricero se usaba en Bizkaia para chorizos?",
+   ["Ángel Muro","Juan Antonio Mogel","Diego Navarro Soler","Padre Larramendi"],2,"📜 Historia"],
+  ["¿En qué año aparece la primera receta de bacalao a la vizcaína escrita en euskera?",
+   ["1845","1865","1889","1892"],2,"📜 Historia"],
+  ["¿Qué grasa animal se añade al final en la receta del restaurante El Amparo?",
+   ["Mantequilla","Nata","Manteca derretida","Tocino frito"],2,"📜 Historia"],
+  ["¿Qué dos ingredientes poco comunes llevaba la receta de bacalao a la vizcaína de Nueva Orleans?",
+   ["Canela y clavo","Chocolate y curry","Cacao y pimienta","Miel y jengibre"],1,"🌍 Internacional"],
+  ["¿Cómo se llama el plato de cordero con vísceras y sangre cuajada en salsa vizcaína?",
+   ["Tripacallos","Frikatza","Morros en salsa","Patas rebozadas"],1,"🍽️ Platos"],
+  ["¿Qué localidad francesa es centro de cultivo de un pimiento primo hermano del choricero?",
+   ["París","Lyon","Espelette","Burdeos"],2,"🌍 Internacional"],
+  ["¿Qué líquido se usaba como 'elemento de mojado' en recetas antiguas?",
+   ["Vino tinto","Agua de cocción del bacalao","Leche","Caldo de pescado concentrado"],1,"👨‍🍳 Técnica"],
+  ["¿Qué jefe de cocina del Hotel Ritz de Madrid aparece en recetas de principios del siglo XX?",
+   ["Teodoro Bardají","Antonio Azcoaga","José García Patrón","Genaro Pildain"],1,"📜 Historia"],
+  ["¿Qué frutos secos añadió 'Shishito' en alguna de sus versiones?",
+   ["Piñones","Almendras y avellanas","Nueces","Cacahuetes"],1,"🌶️ Ingredientes"],
+  ["¿Qué verdura extra (además de cebolla) aparece en una receta de 1932 de Emakume Abertzale Batza?",
+   ["Calabacín","Zanahoria","Apio","Puerro"],1,"📜 Historia"],
+  ["¿Cómo se llama la receta de bacalao a la vizcaína en portugués (1927)?",
+   ["Molho à Biscainha","Bacalhau à Vizcaína","Salsa Vermelha","Pimentão com bacalhau"],1,"🌍 Internacional"],
+  ["¿Qué tipo de pan se recomienda para espesar la salsa en recetas clásicas?",
+   ["Pan de molde","Pan de pistola","Pan integral","Pan de centeno"],1,"👨‍🍳 Técnica"],
+  ["¿Qué país caribeño aparece con receta propia de bacalao a la vizcaína con ajíes dulces?",
+   ["México","Cuba","Puerto Rico","República Dominicana"],2,"🌍 Internacional"],
+  ["¿Qué ingrediente lácteo y cuál dulce usaba la Academia Casi en su salsa?",
+   ["Leche y chocolate","Nata y miel","Yogur y azúcar","Mantequilla y caramelo"],0,"📜 Historia"],
+  ["¿Qué chef del restaurante Azurmendi incluye guisantes lágrima y flores de ajo en su salsa roja?",
+   ["Fernando Canales","Josean Martínez Alija","Eneko Atxa","Beñat Ormaechea"],2,"👨‍🍳 Técnica"],
+  ["¿Qué técnica moderna se menciona para cocinar cebolla y pimiento a baja temperatura?",
+   ["Sous-vide (envasado al vacío)","Microondas","Fritura profunda","Ahumado en frío"],0,"👨‍🍳 Técnica"],
+  ["¿Cómo se llamaba la receta francesa de bacalao a la vizcaína en Le Grand livre de la Cuisine (1929)?",
+   ["Sauce à la Basque","Morue à la Biscaïenne","Sauce Rouge de Bilbao","Pimentade au thon"],1,"🌍 Internacional"],
+  ["¿Qué restaurante bilbaíno cerrado en 1918 es considerado la referencia de la salsa genuina?",
+   ["El Antiguo","Guria","El Amparo","Club Ranero"],2,"📜 Historia"],
+];
+
+const TOTAL = QS.length;
+
+// ============================================================
+// XP / LEVEL
+// ============================================================
+const LEVEL_XP = [0,80,200,380,620,920,1300,1760,2300,2940,3700,4600,5650,6850,8200,9700];
+const DIFF_TIME = { easy:30, normal:20, chef:12 };
+const DIFF_XP   = { easy:1,  normal:2,  chef:3 };
+
+let totalXP    = parseInt(localStorage.getItem('vz_xp')   || '0');
+let bestStreak = parseInt(localStorage.getItem('vz_best') || '0');
+let sessions   = parseInt(localStorage.getItem('vz_sess') || '0');
+
+function getLevel(xp) {
+  let lv = 1;
+  for (let i=1;i<LEVEL_XP.length;i++) { if(xp>=LEVEL_XP[i]) lv=i+1; else break; }
+  return Math.min(lv,LEVEL_XP.length);
+}
+function getXPPct(xp) {
+  const lv=getLevel(xp);
+  if(lv>=LEVEL_XP.length) return 1;
+  const lo=LEVEL_XP[lv-1],hi=LEVEL_XP[lv];
+  return (xp-lo)/(hi-lo);
+}
+function addXP(amt) {
+  const lvB=getLevel(totalXP);
+  totalXP+=amt; sessionXP+=amt;
+  localStorage.setItem('vz_xp',totalXP);
+  if(getLevel(totalXP)>lvB) showLevelUp(getLevel(totalXP));
+  updateXPMini();
+}
+
+// ============================================================
+// MASTERY
+// ============================================================
+let masteredSet = new Set();
+let failMap     = {};
+
+function loadMastery() {
+  try {
+    masteredSet = new Set(JSON.parse(localStorage.getItem('vz_mastered')||'[]'));
+    failMap     = JSON.parse(localStorage.getItem('vz_fails')||'{}');
+  } catch(e) { masteredSet=new Set(); failMap={}; }
+}
+function saveMastery() {
+  localStorage.setItem('vz_mastered',JSON.stringify([...masteredSet]));
+  localStorage.setItem('vz_fails',JSON.stringify(failMap));
+}
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let gameType='flash', difficulty='normal';
+let activeDeck=[], deckIdx=0;
+let current=null, curOptions=[];
+let streak=0, sessionBest=0, lives=3, score=0;
+let totalAttempts=0, totalCorrect=0, sessionXP=0;
+let sessionFailed=new Set(), isBlocked=false;
+let timerInterval=null, timeLeft=0;
+
+// ============================================================
+// SCREEN
+// ============================================================
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function setDiff(d) {
+  difficulty=d;
+  ['Easy','Normal','Chef'].forEach(x=>document.getElementById('diff'+x).classList.remove('selected'));
+  document.getElementById('diff'+d.charAt(0).toUpperCase()+d.slice(1)).classList.add('selected');
+}
+
+function setType(t) {
+  gameType=t;
+  ['Flash','Sudden','Ranked'].forEach(x=>document.getElementById('type'+x).classList.remove('selected'));
+  const map={flash:'Flash',sudden:'Sudden',ranked:'Ranked'};
+  document.getElementById('type'+map[t]).classList.add('selected');
+}
+
+// ============================================================
+// START SCREEN UPDATE
+// ============================================================
+function updateStartScreen() {
+  loadMastery();
+  const mc=masteredSet.size, pct=Math.round(mc/TOTAL*100);
+  const circ=2*Math.PI*19;
+  document.getElementById('ringFg').style.strokeDashoffset=circ-(circ*mc/TOTAL);
+  document.getElementById('ringLabel').innerText=pct+'%';
+  document.getElementById('masteryTitle').innerText=
+    mc===0?'Empieza el desafío':mc===TOTAL?'¡Todo dominado! 🏆':
+    mc>=20?'¡Casi experto!':mc>=10?'Buen progreso':'Sigue aprendiendo';
+  document.getElementById('masterySub').innerText=mc+' de '+TOTAL+' preguntas dominadas';
+  const lv=getLevel(totalXP);
+  document.getElementById('startLvBadge').innerText='Nv. '+lv;
+  document.getElementById('startXpFill').style.width=(getXPPct(totalXP)*100)+'%';
+  document.getElementById('startXpLbl').innerText=totalXP+' XP';
+  document.getElementById('sXP').innerText=totalXP;
+  document.getElementById('sBest').innerText=bestStreak;
+  document.getElementById('sSess').innerText=sessions;
+}
+
+function goHome() { clearTimer(); updateStartScreen(); show('scrStart'); }
+
+// ============================================================
+// GAME START
+// ============================================================
+function startGame() {
+  loadMastery();
+  sessionXP=0; sessionFailed=new Set();
+  streak=0; sessionBest=0; lives=gameType==='sudden'?1:3;
+  score=0; totalAttempts=0; totalCorrect=0; isBlocked=false;
+  sessions++; localStorage.setItem('vz_sess',sessions);
+
+  // Build deck
+  if(gameType==='ranked') {
+    activeDeck=[...Array(TOTAL).keys()].sort(()=>Math.random()-0.5);
+  } else {
+    const nonMastered=[...Array(TOTAL).keys()].filter(i=>!masteredSet.has(i));
+    if(nonMastered.length===0) {
+      // All mastered — reset for another round
+      masteredSet=new Set(); saveMastery(); updateStartScreen();
+    }
+    const pool=nonMastered.length>0?nonMastered:[...Array(TOTAL).keys()];
+    pool.sort((a,b)=>((failMap[b]||0)-(failMap[a]||0)));
+    activeDeck=pool.slice(0,Math.min(15,pool.length));
+    // shuffle
+    activeDeck.sort(()=>Math.random()-0.5);
+  }
+
+  deckIdx=0;
+  updateLives();
+  show('scrGame');
+  nextQ();
+}
+
+// ============================================================
+// QUESTION
+// ============================================================
+function nextQ() {
+  clearTimer();
+  if(deckIdx>=activeDeck.length) { endGame(); return; }
+
+  const qi=activeDeck[deckIdx];
+  current=QS[qi];
+  curOptions=current[1];
+
+  // Update UI
+  const pct=(deckIdx/activeDeck.length*100).toFixed(0);
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progText').innerText=deckIdx+'/'+activeDeck.length;
+  document.getElementById('masteredPill').innerText='✓ '+masteredSet.size+'/'+TOTAL;
+  document.getElementById('cardCat').innerText=current[3];
+  document.getElementById('cardNum').innerText='PREGUNTA '+(deckIdx+1)+' / '+activeDeck.length;
+  document.getElementById('cardWord').innerText=current[0];
+  document.getElementById('cardReveal').className='card-reveal';
+  document.getElementById('cardReveal').innerText='';
+
+  // Options
+  for(let i=0;i<4;i++) {
+    const b=document.getElementById('btn'+i);
+    b.className='btn-opt';
+    b.disabled=false;
+    b.innerHTML='<span class="kh">'+(i+1)+'</span>'+curOptions[i];
+    // Reset animation
+    b.style.animation='none';
+    void b.offsetWidth;
+    b.style.animation='';
+  }
+
+  // Card pop
+  const card=document.getElementById('mainCard');
+  card.classList.remove('pop','shake');
+  void card.offsetWidth;
+  card.classList.add('pop');
+
+  isBlocked=false;
+  startTimer();
+}
+
+// ============================================================
+// TIMER
+// ============================================================
+function startTimer() {
+  clearTimer();
+  timeLeft=DIFF_TIME[difficulty];
+  const bar=document.getElementById('timerBar');
+  bar.className='timer-bar';
+  bar.style.transition='none';
+  bar.style.width='100%';
+  requestAnimationFrame(()=>{requestAnimationFrame(()=>{
+    bar.style.transition='width '+timeLeft+'s linear';
+    bar.style.width='0%';
+  });});
+
+  timerInterval=setInterval(()=>{
+    timeLeft--;
+    if(timeLeft<=5) bar.className='timer-bar urgent';
+    if(timeLeft<=0) { clearTimer(); onTimeout(); }
+  },1000);
+}
+
+function clearTimer() {
+  clearInterval(timerInterval); timerInterval=null;
+}
+
+function onTimeout() {
+  if(isBlocked) return;
+  isBlocked=true;
+  const qi=activeDeck[deckIdx];
+  failMap[qi]=(failMap[qi]||0)+1;
+  saveMastery();
+  streak=0; updateStreak();
+  loseLife();
+  soundTimeout();
+  // Show correct
+  const b=document.getElementById('btn'+current[2]);
+  b.classList.add('correct');
+  document.getElementById('cardReveal').className='card-reveal show';
+  document.getElementById('cardReveal').innerText='⏱ Tiempo agotado · Respuesta: '+current[1][current[2]];
+  for(let i=0;i<4;i++) document.getElementById('btn'+i).disabled=true;
+  sessionFailed.add(deckIdx);
+  setTimeout(()=>{ deckIdx++; nextQ(); },1600);
+}
+
+// ============================================================
+// CHECK ANSWER
+// ============================================================
+function check(idx) {
+  if(isBlocked) return;
+  isBlocked=true;
+  clearTimer();
+  totalAttempts++;
+  const qi=activeDeck[deckIdx];
+  const correct=current[2];
+
+  for(let i=0;i<4;i++) document.getElementById('btn'+i).disabled=true;
+
+  if(idx===correct) {
+    document.getElementById('btn'+idx).classList.add('correct');
+    totalCorrect++;
+    streak++;
+    if(streak>sessionBest) sessionBest=streak;
+    if(streak>bestStreak) { bestStreak=streak; localStorage.setItem('vz_best',bestStreak); }
+    updateStreak();
+
+    // XP: base + streak bonus + speed bonus
+    const base=DIFF_XP[difficulty];
+    const streakBonus=streak>=3?1:0;
+    const xpGain=base+streakBonus;
+    addXP(xpGain*10);
+    score+=xpGain*10;
+
+    // Mastery: correct 2 times in a row (tracked via failMap reset)
+    if(!failMap[qi] || failMap[qi]===0) {
+      masteredSet.add(qi);
+      saveMastery();
+    }
+    delete failMap[qi]; saveMastery();
+
+    document.getElementById('scoreEl').innerText=score;
+    document.getElementById('cardReveal').className='card-reveal show';
+    document.getElementById('cardReveal').innerText='✓ ¡Correcto!';
+    soundCorrect();
+    spawnParticles();
+    if(streak===3) { comboBurst('🔥 ¡RACHA x3!'); soundStreak(); }
+    else if(streak===5) { comboBurst('⚡ ¡RACHA x5!'); soundStreak(); }
+    else if(streak===10) { comboBurst('🏆 ¡MAESTRO!'); soundStreak(); }
+    setTimeout(()=>{ deckIdx++; nextQ(); },900);
+  } else {
+    document.getElementById('btn'+idx).classList.add('wrong');
+    document.getElementById('btn'+correct).classList.add('correct');
+    failMap[qi]=(failMap[qi]||0)+1;
+    saveMastery();
+    streak=0; updateStreak();
+    loseLife();
+    soundWrong();
+    sessionFailed.add(deckIdx);
+    document.getElementById('cardReveal').className='card-reveal show';
+    document.getElementById('cardReveal').innerText='✗ Era: '+current[1][correct];
+    const card=document.getElementById('mainCard');
+    card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+    setTimeout(()=>{ deckIdx++; nextQ(); },1400);
+  }
+}
+
+// ============================================================
+// LIVES
+// ============================================================
+function loseLife() {
+  if(gameType==='ranked') return; // no lives in ranked
+  lives--;
+  updateLives();
+  if(lives<=0) { setTimeout(()=>endGame(),1500); isBlocked=true; }
+}
+function updateLives() {
+  const el=document.getElementById('livesEl');
+  if(gameType==='ranked') { el.innerHTML=''; return; }
+  if(gameType==='sudden') {
+    el.innerHTML='<span class="surv-badge">💀 1 vida</span>'; return;
+  }
+  const all=el.querySelectorAll('.life');
+  all.forEach((l,i)=>l.classList.toggle('lost',i>=lives));
+}
+
+// ============================================================
+// STREAK
+// ============================================================
+function updateStreak() {
+  const el=document.getElementById('streakEl');
+  el.innerText=streak>=2?'🔥 x'+streak:'🎯';
+  el.classList.toggle('hot',streak>=3);
+}
+
+// ============================================================
+// XP MINI BAR
+// ============================================================
+function updateXPMini() {
+  const lv=getLevel(totalXP);
+  document.getElementById('xpMiniLv').innerText='Nv.'+lv;
+  document.getElementById('xpMiniBar').style.width=(getXPPct(totalXP)*100)+'%';
+  document.getElementById('xpMiniVal').innerText=totalXP+'xp';
+}
+
+// ============================================================
+// END GAME
+// ============================================================
+function endGame() {
+  clearTimer();
+  const acc=totalAttempts>0?Math.round(totalCorrect/totalAttempts*100):0;
+  const rank=
+    acc>=90?{icon:'🏆',title:'¡Maestro Vizcaíno!',msg:'Conocimiento excepcional de la salsa'}:
+    acc>=75?{icon:'🥇',title:'¡Gran Chef!',msg:'Dominas la salsa vizcaína'}:
+    acc>=55?{icon:'🥈',title:'Buen cocinero',msg:'Sólido conocimiento. Sigue practicando'}:
+    acc>=35?{icon:'🥉',title:'Aprendiz',msg:'Buen comienzo. ¡Vuelve a intentarlo!'}:
+             {icon:'🫙',title:'Pinche de cocina',msg:'La salsa vizcaína te espera'};
+
+  document.getElementById('endIcon').innerText=rank.icon;
+  document.getElementById('endTitle').innerText=rank.title;
+  document.getElementById('endMsg').innerText=rank.msg;
+  document.getElementById('endScore').innerText=score;
+  document.getElementById('endStreak').innerText=sessionBest;
+  document.getElementById('endAcc').innerText=acc+'%';
+  document.getElementById('endXP').innerText='+'+sessionXP+' XP';
+  document.getElementById('endXPSub').innerText='XP ganado esta sesión';
+
+  // Failed
+  const fp=document.getElementById('failedPanel');
+  const fl=document.getElementById('failedList');
+  fl.innerHTML='';
+  if(sessionFailed.size>0) {
+    fp.classList.add('show');
+    sessionFailed.forEach(i=>{
+      const tag=document.createElement('span');
+      tag.className='failed-tag';
+      tag.innerText=QS[activeDeck[i]][0].slice(0,30)+'…';
+      fl.appendChild(tag);
+    });
+  } else { fp.classList.remove('show'); }
+
+  if(acc>=75) launchConfetti();
+  show('scrEnd');
+}
+
+function restartSame() { startGame(); }
+
+// ============================================================
+// LEVEL UP
+// ============================================================
+function showLevelUp(lv) {
+  document.getElementById('luLvl').innerText='¡Nivel '+lv+'!';
+  const ov=document.getElementById('lvupOverlay');
+  ov.classList.remove('show'); void ov.offsetWidth; ov.classList.add('show');
+  soundLevelUp();
+  setTimeout(()=>ov.classList.remove('show'),2300);
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+let toastTimer=null;
+function toast(msg,type='good') {
+  const el=document.getElementById('toast');
+  el.innerText=msg; el.className='toast '+type;
+  void el.offsetWidth; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),1800);
+}
+
+// ============================================================
+// PARTICLES / CONFETTI
+// ============================================================
+function spawnParticles() {
+  const colors=['#3dbfbf','#9b6fd4','#c47fd4','#2dd4bf'];
+  for(let i=0;i<8;i++) {
+    const p=document.createElement('div');
+    p.className='particle';
+    const s=4+Math.random()*8;
+    p.style.cssText='width:'+s+'px;height:'+s+'px;left:'+(30+Math.random()*40)+'vw;top:60vh;background:'+colors[Math.floor(Math.random()*colors.length)]+';animation-duration:'+(0.6+Math.random()*0.5)+'s';
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),1200);
+  }
+}
+
+function launchConfetti() {
+  const colors=['#3dbfbf','#9b6fd4','#c47fd4','#2dd4bf','#7dd3fc','#fff'];
+  for(let i=0;i<70;i++) {
+    const c=document.createElement('div');
+    c.className='cf';
+    const s=(6+Math.random()*9)+'px';
+    c.style.cssText='left:'+Math.random()*100+'vw;width:'+s+';height:'+s+';background:'+colors[Math.floor(Math.random()*colors.length)]+';animation-duration:'+(2+Math.random()*1.5)+'s;animation-delay:'+(Math.random()*0.5)+'s;border-radius:'+(Math.random()>0.5?'50%':'2px');
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),3500);
+  }
+}
+
+function comboBurst(text) {
+  const el=document.createElement('div');
+  el.className='combo-burst';
+  el.innerText=text;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),800);
+}
+
+// ============================================================
+// KEYBOARD
+// ============================================================
+document.addEventListener('keydown',e=>{
+  const map={'1':0,'2':1,'3':2,'4':3};
+  if(e.key in map) check(map[e.key]);
+});
+
+// ============================================================
+// INIT
+// ============================================================
+updateStartScreen();
+updateXPMini();
+</script>
+</body>
+</html>

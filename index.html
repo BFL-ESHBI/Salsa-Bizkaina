@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Salsa Vizcaína · ESHBI Challenge</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #100808;
+      --card-bg: rgba(30, 8, 8, 0.96);
+      --accent: #e03a2f;
+      --gold: #fb923c;
+      --cyan: #fca5a5;
+      --text: #f5e8e8;
+      --text-dim: #8a6060;
+      --success: #34d399;
+      --error: #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Sora', sans-serif; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-image:
+        radial-gradient(circle at 10% 10%, rgba(224, 58, 47, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(224, 58, 47, 0.1) 0%, transparent 40%);
+    }
+
+    #splash {
+      position: fixed; inset: 0; background: var(--bg); z-index: 1000;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #splash.hidden { opacity: 0; pointer-events: none; transform: scale(1.1); }
+    .eshbi-logo {
+      font-size: clamp(6rem, 22vw, 9rem); font-weight: 800; letter-spacing: -6px; color: var(--text);
+      opacity: 0; transform: scale(0.8); filter: blur(20px);
+      animation: fluidReveal 1.2s forwards cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s; line-height: 0.9;
+    }
+    .eshbi-logo span { color: var(--accent); }
+    .eshbi-sub {
+      font-size: clamp(0.55rem, 2vw, 0.72rem); letter-spacing: 4px; color: var(--text-dim);
+      margin-top: 15px; opacity: 0; white-space: nowrap; text-align: center;
+      animation: fadeInSub 1s forwards ease-out 1.1s; text-transform: uppercase; font-weight: 400;
+    }
+    .loader-container {
+      width: 280px; height: 1px; background: rgba(255,255,255,0.03);
+      margin-top: 60px; position: relative; overflow: hidden;
+      opacity: 0; animation: fadeIn 0.5s forwards 1.5s;
+    }
+    .loader-progress {
+      position: absolute; width: 0%; height: 100%; background: var(--accent);
+      box-shadow: 0 0 25px var(--accent);
+      animation: loadFull 2.2s forwards cubic-bezier(0.4, 0, 0.2, 1) 1.5s;
+    }
+
+    .screen, #quiz-content, .btn-opt,
+    #reward-popup, #streak-badge, .floating-point, .floating-wrong, .confetti-piece {
+      will-change: transform, opacity;
+    }
+
+    @keyframes fluidReveal { to { opacity: 1; transform: scale(1); filter: blur(0); } }
+    @keyframes fadeInSub   { to { opacity: 1; } }
+    @keyframes loadFull    { to { width: 100%; } }
+    @keyframes fadeIn      { to { opacity: 1; } }
+
+    @keyframes shake {
+      0%  { transform: translateX(0); }  18% { transform: translateX(-10px); }
+      36% { transform: translateX(10px); } 54% { transform: translateX(-7px); }
+      72% { transform: translateX(7px); }  88% { transform: translateX(-3px); }
+      100%{ transform: translateX(0); }
+    }
+    @keyframes correctFlash {
+      0%   { box-shadow: 0 0 0px rgba(52,211,153,0); }
+      30%  { box-shadow: 0 0 40px rgba(52,211,153,0.9), 0 0 80px rgba(52,211,153,0.4); }
+      100% { box-shadow: 0 0 10px rgba(52,211,153,0.3); }
+    }
+    @keyframes correctPop {
+      0%  { transform: scale(1); }  40% { transform: scale(1.07); }
+      70% { transform: scale(0.98); } 100%{ transform: scale(1.02); }
+    }
+
+    #error-flash { position: fixed; inset: 0; background: rgba(239,68,68,0); pointer-events: none; z-index: 500; }
+    #error-flash.active { animation: redFlash 0.5s forwards ease-out; }
+    @keyframes redFlash {
+      0%  { background: rgba(239,68,68,0); }
+      20% { background: rgba(239,68,68,0.28); }
+      100%{ background: rgba(239,68,68,0); }
+    }
+
+    @keyframes floatPoint {
+      0%  { transform: translateY(0) scale(0.8); opacity: 0; }
+      15% { transform: translateY(-10px) scale(1.3); opacity: 1; }
+      80% { transform: translateY(-55px) scale(1.1); opacity: 1; }
+      100%{ transform: translateY(-75px) scale(0.9); opacity: 0; }
+    }
+    .floating-point {
+      position: fixed; color: var(--success); font-weight: 800; font-size: 1.4rem;
+      pointer-events: none; animation: floatPoint 0.9s forwards cubic-bezier(0.22,1,0.36,1);
+      z-index: 600; text-shadow: 0 0 20px rgba(52,211,153,0.8); transform: translateX(-50%);
+    }
+    @keyframes floatWrong {
+      0%  { transform: translateY(0) translateX(-50%) scale(0.8); opacity: 0; }
+      15% { transform: translateY(-10px) translateX(-50%) scale(1.2); opacity: 1; }
+      80% { transform: translateY(-50px) translateX(-50%) scale(1); opacity: 1; }
+      100%{ transform: translateY(-70px) translateX(-50%) scale(0.9); opacity: 0; }
+    }
+    .floating-wrong {
+      position: fixed; color: var(--error); font-weight: 800; font-size: 1.4rem;
+      pointer-events: none; animation: floatWrong 0.9s forwards cubic-bezier(0.22,1,0.36,1);
+      z-index: 600; text-shadow: 0 0 20px rgba(239,68,68,0.8); transform: translateX(-50%);
+    }
+
+    @keyframes pulseTimer {
+      0%  { box-shadow: 0 0 5px var(--error); }
+      50% { box-shadow: 0 0 25px var(--error), 0 0 8px var(--error) inset; }
+      100%{ box-shadow: 0 0 5px var(--error); }
+    }
+
+    #reward-popup {
+      position: fixed; top: 28px; left: 50%; transform: translateX(-50%) translateY(-80px) scale(0.8);
+      padding: 12px 28px; border-radius: 50px; font-size: 0.78rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 2px; pointer-events: none; opacity: 0; z-index: 700;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5); transition: none;
+    }
+    #reward-popup.show { animation: rewardBounce 2.2s forwards cubic-bezier(0.22,1,0.36,1); }
+    @keyframes rewardBounce {
+      0%  { opacity: 0; transform: translateX(-50%) translateY(-40px) scale(0.6); }
+      18% { opacity: 1; transform: translateX(-50%) translateY(0px) scale(1.12); }
+      30% { transform: translateX(-50%) translateY(-6px) scale(1); }
+      40% { transform: translateX(-50%) translateY(0px) scale(1.04); }
+      55% { transform: translateX(-50%) translateY(0px) scale(1); }
+      80% { opacity: 1; transform: translateX(-50%) translateY(0px) scale(1); }
+      100%{ opacity: 0; transform: translateX(-50%) translateY(-30px) scale(0.85); }
+    }
+
+    #streak-badge {
+      position: fixed; bottom: 32px; right: 24px; width: 64px; height: 64px; border-radius: 50%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-weight: 800; pointer-events: none; z-index: 600; opacity: 0; transform: scale(0);
+      transition: opacity 0.3s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    #streak-badge.visible { opacity: 1; transform: scale(1); }
+    #streak-badge.pulse { animation: streakPulse 0.5s ease-out; }
+    @keyframes streakPulse {
+      0%  { transform: scale(1); }  40% { transform: scale(1.35); }
+      70% { transform: scale(0.92); } 100%{ transform: scale(1); }
+    }
+    .streak-fire { font-size: 1.6rem; line-height: 1; }
+    .streak-num  { font-size: 0.65rem; letter-spacing: 1px; margin-top: 2px; }
+
+    .confetti-piece {
+      position: fixed; width: 8px; height: 8px; border-radius: 2px;
+      pointer-events: none; z-index: 550;
+      animation: confettiFall var(--dur) forwards ease-in;
+    }
+    @keyframes confettiFall {
+      0%  { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+      80% { opacity: 1; }
+      100%{ transform: translateY(var(--fy)) rotate(var(--rot)) scale(0.4) translateX(var(--fx)); opacity: 0; }
+    }
+
+    .screen {
+      position: absolute; width: 100%; height: 100%;
+      display: flex; justify-content: center; align-items: center; padding: 15px;
+      transition: opacity 0.55s cubic-bezier(0.25,1,0.5,1), transform 0.55s cubic-bezier(0.25,1,0.5,1);
+      opacity: 0; transform: translateX(40px); pointer-events: none;
+    }
+    .screen.active { opacity: 1; transform: translateX(0); pointer-events: all; }
+    .screen.exit   { opacity: 0; transform: translateX(-40px); pointer-events: none; }
+
+    .glass-card {
+      background: var(--card-bg); backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,100,80,0.08); border-radius: 40px;
+      padding: 45px 35px; width: 100%; max-width: 420px;
+      box-shadow: 0 50px 140px rgba(0,0,0,0.9); text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .glass-card::after {
+      content: ''; position: absolute; inset: -2px; border-radius: 42px;
+      pointer-events: none; opacity: 0; z-index: 0; transition: opacity 0.15s;
+    }
+    .glass-card.correct-glow::after {
+      background: radial-gradient(ellipse at center, rgba(52,211,153,0.18) 0%, transparent 70%);
+      animation: glowFade 0.65s ease-out forwards;
+    }
+    .glass-card.wrong-glow::after {
+      background: radial-gradient(ellipse at center, rgba(239,68,68,0.22) 0%, transparent 70%);
+      animation: glowFade 0.55s ease-out forwards;
+    }
+    @keyframes glowFade {
+      0%  { opacity: 0; } 30% { opacity: 1; } 100%{ opacity: 0; }
+    }
+
+    .start-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 5px; text-transform: uppercase; letter-spacing: -1px; }
+    .start-title span { color: var(--accent); font-weight: 300; }
+    .xp-container {
+      background: rgba(255,100,80,0.03); padding: 24px; border-radius: 30px;
+      margin: 25px 0; text-align: left; border: 1px solid rgba(255,100,80,0.06);
+    }
+    .xp-bar-bg { height: 2px; background: rgba(255,255,255,0.06); margin-top: 12px; border-radius: 10px; overflow: hidden; }
+    .xp-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 1.8s cubic-bezier(0.16,1,0.3,1); }
+
+    .btn-diff {
+      background: rgba(255,255,255,0.01); border: 1px solid rgba(255,100,80,0.08);
+      padding: 18px; border-radius: 22px; color: var(--text-dim);
+      cursor: pointer; transition: 0.3s; width: 100%;
+      text-transform: uppercase; font-weight: 700; font-size: 0.72rem; letter-spacing: 2px; margin-bottom: 12px;
+    }
+    .btn-diff.selected { border-color: var(--accent); background: rgba(224,58,47,0.06); color: var(--text); }
+    .btn-play {
+      width: 100%; padding: 24px; background: var(--accent); color: white; border: none; border-radius: 26px;
+      font-size: 1.05rem; font-weight: 800; cursor: pointer; margin-top: 10px;
+      box-shadow: 0 20px 45px rgba(224,58,47,0.3);
+      transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+    .btn-play:active { transform: scale(0.95); }
+
+    #quiz-content { transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.25,1,0.5,1); }
+    #quiz-content.slide-out { opacity: 0; transform: translateX(-30px) scale(0.97); }
+    #quiz-content.slide-in  { opacity: 0; transform: translateX(30px) scale(0.97); }
+
+    .hud { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .timer-track { height: 3px; background: rgba(255,255,255,0.06); margin-bottom: 35px; border-radius: 3px; overflow: visible; }
+    .timer-bar { height: 100%; background: var(--accent); width: 100%; transition: width 0.1s linear, background 0.3s; border-radius: 3px; }
+    .timer-bar.warning { background: var(--gold); }
+    .timer-bar.danger  { background: var(--error); animation: pulseTimer 0.5s infinite; }
+
+    .q-text { font-size: 1.2rem; font-weight: 400; line-height: 1.6; margin-bottom: 35px; min-height: 100px; text-align: left; }
+    .options-grid { display: grid; gap: 14px; }
+    .btn-opt {
+      padding: 20px 22px; background: rgba(255,100,80,0.02); border: 1px solid rgba(255,100,80,0.07);
+      border-radius: 24px; color: var(--text); font-size: 0.9rem; cursor: pointer;
+      transition: background 0.25s, border-color 0.25s, transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s;
+      text-align: left; position: relative; overflow: hidden;
+    }
+    .btn-opt::before {
+      content: ''; position: absolute; inset: 0; opacity: 0;
+      background: radial-gradient(circle at var(--rx,50%) var(--ry,50%), rgba(255,255,255,0.1) 0%, transparent 70%);
+      transition: opacity 0.3s;
+    }
+    .btn-opt:hover:not(:disabled)::before { opacity: 1; }
+    .btn-opt:hover:not(:disabled) { background: rgba(255,100,80,0.06); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .btn-opt:active:not(:disabled) { transform: scale(0.96); }
+    .btn-opt.correct { background: var(--success) !important; color: #000; font-weight: 700; border-color: transparent; animation: correctPop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards, correctFlash 0.6s ease-out forwards; }
+    .btn-opt.wrong   { background: var(--error) !important; color: #fff; border-color: transparent; animation: wrongWobble 0.4s ease-out forwards; }
+    @keyframes wrongWobble {
+      0%  { transform: scale(1); }  25% { transform: scale(1.04) rotate(-1deg); }
+      50% { transform: scale(0.97) rotate(1deg); } 75% { transform: scale(1.02) rotate(-0.5deg); }
+      100%{ transform: scale(1); }
+    }
+    .btn-opt:disabled { cursor: default; }
+
+    #livesDisp { letter-spacing: 3px; font-size: 1.2rem; transition: transform 0.2s; }
+    #livesDisp.lose-life { animation: lifeLost 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes lifeLost {
+      0%  { transform: scale(1); }  40% { transform: scale(1.25) rotate(-5deg); }
+      70% { transform: scale(0.9) rotate(3deg); } 100%{ transform: scale(1) rotate(0); }
+    }
+    #scoreDisp { color: var(--gold); font-weight: 800; font-size: 1.5rem; letter-spacing: -1px; }
+    #scoreDisp.pop { animation: scorePop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes scorePop {
+      0%  { transform: scale(1); color: var(--gold); }
+      50% { transform: scale(1.4); color: #fff; }
+      100%{ transform: scale(1); color: var(--gold); }
+    }
+    .shake { animation: shake 0.5s cubic-bezier(0.36,0.07,0.19,0.97) both; }
+
+    #scrEnd .glass-card { overflow: visible; }
+    #finalScore { font-size: 5.5rem; font-weight: 200; color: var(--gold); margin: 25px 0; letter-spacing: -4px; }
+    #endTitle { font-weight: 300; letter-spacing: 4px; font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; }
+    #endMsg { color: var(--text-dim); font-size: 0.75rem; margin-bottom: 40px; }
+  </style>
+</head>
+<body>
+  <div id="error-flash"></div>
+  <div id="reward-popup"></div>
+  <div id="streak-badge">
+    <div class="streak-fire">🔥</div>
+    <div class="streak-num" id="streakNum">x1</div>
+  </div>
+
+  <div id="splash">
+    <div class="eshbi-logo">ES<span>H</span>BI</div>
+    <div class="eshbi-sub">Escuela Superior de Hostelería Bilbao</div>
+    <div class="loader-container"><div class="loader-progress"></div></div>
+  </div>
+
+  <div class="screen" id="scrStart">
+    <div class="glass-card">
+      <h1 class="start-title" style="font-size:2.8rem;line-height:1.2;">SALSA<br><span>VIZCAÍNA</span></h1>
+      <p style="color:var(--accent);font-weight:800;font-size:0.65rem;letter-spacing:4px;margin-bottom:30px;">ESHBI CHALLENGE</p>
+      <div class="xp-container">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <span id="rankDisp" style="color:var(--gold);font-weight:700;font-size:0.75rem;">APRENDIZ</span>
+          <span id="xpText" style="color:var(--text-dim);font-size:0.68rem;">0 / 2000 XP</span>
+        </div>
+        <div class="xp-bar-bg"><div class="xp-bar-fill" id="xpBarMain"></div></div>
+      </div>
+      <div id="diffs">
+        <button class="btn-diff" onclick="setDiff(25,this)">AMATEUR</button>
+        <button class="btn-diff selected" onclick="setDiff(15,this)">PROFESIONAL</button>
+        <button class="btn-diff" onclick="setDiff(8,this)">MASTER CHEF</button>
+      </div>
+      <button class="btn-play" id="btnStartGame">INICIAR SERVICIO</button>
+    </div>
+  </div>
+
+  <div class="screen" id="scrGame">
+    <div class="glass-card" id="gameCard">
+      <div id="quiz-content">
+        <div class="hud">
+          <div id="livesDisp">❤️❤️❤️</div>
+          <div id="scoreDisp">0</div>
+        </div>
+        <div id="levelBar" style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+          <span id="levelLabel" style="font-size:0.62rem;font-weight:700;letter-spacing:2px;color:var(--accent);text-transform:uppercase;white-space:nowrap;">Nv.1 · Aprendiz</span>
+          <div style="flex:1;height:2px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;">
+            <div id="levelBarFill" style="height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width 0.6s cubic-bezier(0.16,1,0.3,1);"></div>
+          </div>
+          <span id="levelProgress" style="font-size:0.6rem;color:var(--text-dim);white-space:nowrap;">0/5</span>
+        </div>
+        <div class="timer-track"><div class="timer-bar" id="tBar"></div></div>
+        <div class="q-text" id="qText">Preparando la salsa...</div>
+        <div class="options-grid" id="optsBox"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="scrEnd">
+    <div class="glass-card">
+      <h2 id="endTitle">Servicio Finalizado</h2>
+      <div id="finalScore">0</div>
+      <p id="endMsg">Balance del servicio completado.</p>
+      <button class="btn-play" onclick="restartGame()">NUEVA COMANDA</button>
+    </div>
+  </div>
+
+<script>
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function playNote(freq, type, duration, vol=0.1) {
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    const osc=audioCtx.createOscillator(), gain=audioCtx.createGain();
+    osc.type=type; osc.frequency.setValueAtTime(freq,audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol,audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+duration);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime+duration);
+  }
+  const sounds = {
+    correct:   ()=>{ playNote(523.25,'triangle',0.4,0.1); setTimeout(()=>playNote(659.25,'triangle',0.5,0.1),80); },
+    wrong:     ()=>{ playNote(220,'sawtooth',0.3,0.1); setTimeout(()=>playNote(180,'sawtooth',0.4,0.1),120); },
+    click:     ()=>playNote(800,'sine',0.05,0.03),
+    tick:      ()=>playNote(1200,'square',0.03,0.01),
+    streak:    ()=>{ playNote(523.25,'sine',0.3,0.1); setTimeout(()=>playNote(783.99,'sine',0.4,0.12),100); setTimeout(()=>playNote(1046,'sine',0.5,0.12),220); },
+    streakEpic:()=>{ [523,659,783,1046,1318].forEach((f,i)=>setTimeout(()=>playNote(f,'sine',0.5,0.1),i*80)); },
+    win:       ()=>{ [523,659,783,1046].forEach((f,i)=>setTimeout(()=>playNote(f,'square',0.6,0.05),i*120)); },
+    gameover:  ()=>{ playNote(300,'sawtooth',0.4,0.1); setTimeout(()=>playNote(200,'sawtooth',0.6,0.15),200); }
+  };
+
+  const POOL = [
+    {q:"¿Cuál es la base fundamental de la salsa vizcaína?", a:["Tomate y ajo","Cebolla, pimiento choricero y una grasa","Pimiento verde y harina","Mantequilla y vino blanco"], c:1},
+    {q:"¿Qué tipo de grasa vegetal ha predominado históricamente en la salsa vizcaína?", a:["Aceite de girasol","Aceite de oliva","Manteca de cerdo","Mantequilla"], c:1},
+    {q:"¿A partir de qué año se popularizó el uso del pimiento choricero en la salsa vizcaína?", a:["1845","1865","1892","1903"], c:2},
+    {q:"¿Qué tipo de cebolla se considera genuina para esta salsa desde el primer tercio del siglo XX?", a:["Cebolla blanca","Cebolla amarilla","Cebolla roja","Cebolla chalota"], c:2},
+    {q:"¿Qué se añade a veces para neutralizar el amargor del pimiento choricero?", a:["Vinagre","Azúcar","Limón","Sal gruesa"], c:1},
+    {q:"¿Cuántas horas se necesita cocinar la cebolla correctamente para la salsa tradicional?", a:["1-2 horas","2-3 horas","4-5 horas","6-7 horas"], c:2},
+    {q:"¿Qué plato emblemático ha difundido más la salsa vizcaína?", a:["Merluza en salsa verde","Bacalao a la vizcaína","Besugo al horno","Atún encebollado"], c:1},
+    {q:"¿Qué escritor diferenció entre salsa vizcaína 'trisílaba' (verde) y 'cuadrisílaba' (roja)?", a:["Sabino Arana","Miguel de Unamuno","Pío Baroja","Emilia Pardo Bazán"], c:1},
+    {q:"¿Qué ingrediente aparece en 18 de 24 recetas analizadas entre 1845 y 1896?", a:["Ajo","Tomate","Pan","Vino blanco"], c:1},
+    {q:"¿Qué pimiento seco típico de Murcia y Levante es similar al choricero?", a:["Pimiento morrón","Pimiento de Gernika","Ñora","Pimiento de Calahorra"], c:2},
+    {q:"¿Qué elemento espesante poco común usaba la Academia Casi (1946)?", a:["Harina de maíz","Galletas María","Sémola","Fécula de patata"], c:1},
+    {q:"¿Qué producto traído de América por Colón resultó clave para esta salsa?", a:["Maíz","Patata","Pimiento","Tomate"], c:2},
+    {q:"¿Quién documentó en 1881 que el pimiento choricero se usaba en Bizkaia para chorizos?", a:["Ángel Muro","Juan Antonio Mogel","Diego Navarro Soler","Padre Larramendi"], c:2},
+    {q:"¿En qué año aparece la primera receta de bacalao a la vizcaína escrita en euskera?", a:["1845","1865","1889","1892"], c:2},
+    {q:"¿Qué grasa animal se añade al final en la receta del restaurante El Amparo?", a:["Mantequilla","Nata","Manteca derretida","Tocino frito"], c:2},
+    {q:"¿Qué dos ingredientes poco comunes llevaba la receta de bacalao a la vizcaína de Nueva Orleans?", a:["Canela y clavo","Chocolate y curry","Cacao y pimienta","Miel y jengibre"], c:1},
+    {q:"¿Cómo se llama el plato de cordero con vísceras y sangre cuajada en salsa vizcaína?", a:["Tripacallos","Frikatza","Morros en salsa","Patas rebozadas"], c:1},
+    {q:"¿Qué localidad francesa es centro de cultivo de un pimiento primo hermano del choricero?", a:["París","Lyon","Espelette","Burdeos"], c:2},
+    {q:"¿Qué líquido se usaba como 'elemento de mojado' en recetas antiguas?", a:["Vino tinto","Agua de cocción del bacalao","Leche","Caldo de pescado concentrado"], c:1},
+    {q:"¿Qué jefe de cocina del Hotel Ritz de Madrid aparece en recetas de principios del siglo XX?", a:["Teodoro Bardají","Antonio Azcoaga","José García Patrón","Genaro Pildain"], c:1},
+    {q:"¿Qué frutos secos añadió 'Shishito' en alguna de sus versiones?", a:["Piñones","Almendras y avellanas","Nueces","Cacahuetes"], c:1},
+    {q:"¿Qué verdura extra (además de cebolla) aparece en una receta de 1932 de Emakume Abertzale Batza?", a:["Calabacín","Zanahoria","Apio","Puerro"], c:1},
+    {q:"¿Cómo se llama la receta de bacalao a la vizcaína en portugués (1927)?", a:["Molho à Biscainha","Bacalhau à Vizcaína","Salsa Vermelha","Pimentão com bacalhau"], c:1},
+    {q:"¿Qué tipo de pan se recomienda para espesar la salsa en recetas clásicas?", a:["Pan de molde","Pan de pistola","Pan integral","Pan de centeno"], c:1},
+    {q:"¿Qué país caribeño aparece con receta propia de bacalao a la vizcaína con ajíes dulces?", a:["México","Cuba","Puerto Rico","República Dominicana"], c:2},
+    {q:"¿Qué ingrediente lácteo y cuál dulce usaba la Academia Casi en su salsa?", a:["Leche y chocolate","Nata y miel","Yogur y azúcar","Mantequilla y caramelo"], c:0},
+    {q:"¿Qué chef del restaurante Azurmendi incluye guisantes lágrima y flores de ajo en su salsa roja?", a:["Fernando Canales","Josean Martínez Alija","Eneko Atxa","Beñat Ormaechea"], c:2},
+    {q:"¿Qué técnica moderna se menciona para cocinar cebolla y pimiento a baja temperatura?", a:["Sous-vide (envasado al vacío)","Microondas","Fritura profunda","Ahumado en frío"], c:0},
+    {q:"¿Cómo se llamaba la receta francesa de bacalao a la vizcaína en Le Grand livre de la Cuisine (1929)?", a:["Sauce à la Basque","Morue à la Biscaïenne","Sauce Rouge de Bilbao","Pimentade au thon"], c:1},
+    {q:"¿Qué restaurante bilbaíno cerrado en 1918 es considerado la referencia de la salsa genuina?", a:["El Antiguo","Guria","El Amparo","Club Ranero"], c:2},
+    {q:"¿Qué variedad de pimiento se utilizaba joven para freír antes de convertirse en choricero?", a:["Pimiento morrón","Pimiento verde tradicional","Ñora","Guindilla"], c:1},
+    {q:"¿Qué mercado vizcaíno es especialmente famoso por la venta de pimientos choriceros?", a:["Mercado de Ordizia","Mercado de Tolosa","Mercado de Gernika","Mercado de Durango"], c:2},
+    {q:"¿Qué parte de la casa se utilizaba tradicionalmente para secar pimientos choriceros?", a:["El sótano","La cuadra","La fachada bajo el alero","El horno"], c:2},
+    {q:"¿Qué aroma podían adquirir los pimientos al secarse cerca del fuego bajo?", a:["Aroma cítrico","Aroma ahumado","Aroma dulce","Aroma ácido"], c:1},
+    {q:"¿Qué tipo de cebolla predominaba originalmente en la salsa vizcaína?", a:["Roja","Blanca","Chalota","Dulce"], c:1},
+    {q:"¿Qué efecto tiene una cocción lenta sobre la cebolla en la salsa vizcaína?", a:["La endurece","La carameliza rápidamente","La vuelve transparente y suave","La seca completamente"], c:2},
+    {q:"¿Qué método sustituyó al temple tradicional del bacalao a partir de 1970?", a:["Escaldado","Blanqueado en grasa","Cocción al vapor","Ahumado"], c:1},
+    {q:"¿Qué bebida alcohólica aparece en algunas recetas históricas de salsa vizcaína?", a:["Ron","Ginebra","Coñac","Vermut"], c:2},
+    {q:"¿Qué término utilizaba el Padre Larramendi para 'cebolla' en euskera?", a:["Piper","Tipula","Baratxuri","Azenario"], c:1},
+    {q:"¿Qué ingrediente protagonizó la salsa vizcaína de mediados del siglo XIX junto a la cebolla?", a:["Pimiento verde","Tomate asado","Ñora","Zanahoria"], c:1},
+    {q:"¿Qué consistencia debe tener una salsa vizcaína clásica bien elaborada?", a:["Líquida y transparente","Espesa y aterciopelada","Gelificada","Espumosa"], c:1},
+    {q:"¿Qué sabor debe evitarse en una salsa vizcaína bien ejecutada?", a:["Dulzor equilibrado","Amargor excesivo","Toque tostado","Ligero ahumado"], c:1},
+    {q:"¿Qué utensilio tradicional se utilizaba para pasar la salsa?", a:["Chino o pasapurés","Soplete","Manga pastelera","Batidor de globo"], c:0},
+    {q:"¿Qué tipo de cocción requiere la cebolla para evitar sabores agresivos?", a:["Cocción rápida","Fritura profunda","Cocción lenta","Grillado"], c:2},
+    {q:"¿Qué textura debe presentar el bacalao servido con salsa vizcaína?", a:["Seca","Fibrosa","Jugosa y laminada","Crujiente"], c:2},
+    {q:"¿Qué ingrediente se considera más polémico en las versiones modernas?", a:["Tomate","Perejil","Pimiento verde","Aceite"], c:0},
+    {q:"¿Qué ingrediente tradicionalmente no forma parte de la salsa vizcaína clásica?", a:["Cebolla","Pimiento choricero","Chocolate","Aceite"], c:2},
+    {q:"¿Qué ingrediente ayuda a redondear el sabor del pimiento choricero?", a:["La cebolla","El limón","El pepino","El vinagre"], c:0},
+    {q:"¿Qué elemento debía evitarse al cocinar la cebolla tradicionalmente?", a:["Temperatura baja","Exceso de tostado","Aceite de oliva","Cocción larga"], c:1},
+    {q:"¿Qué tipo de aroma debe dominar en una salsa vizcaína tradicional?", a:["Fresco y cítrico","Dulce y vegetal","Ahumado intenso","Lácteo"], c:1},
+  ];
+
+  let score=0, lives=3, current=0, timeLimit=15, timer, streak=0, isProcessing=false, correctCount=0;
+  let xp = parseInt(localStorage.getItem('vz_xp_a4') || '0');
+  let shuffledDeck = [];
+
+  const LEVELS = [
+    {name:"Aprendiz", min:0},{name:"Cocinero", min:5},{name:"Salsero", min:10},
+    {name:"Maestro",  min:15},{name:"Chef Vasco",min:20},{name:"Leyenda",min:25},
+  ];
+
+  function getCurrentLevel() {
+    let lv=0;
+    for(let i=0;i<LEVELS.length;i++) { if(correctCount>=LEVELS[i].min) lv=i; }
+    return lv;
+  }
+  function updateLevelUI(justLeveledUp=false) {
+    const lv=getCurrentLevel(), next=LEVELS[lv+1];
+    const inLevel=correctCount-LEVELS[lv].min, needed=next?next.min-LEVELS[lv].min:5;
+    const pct=Math.min(100,(inLevel/needed)*100);
+    document.getElementById('levelLabel').innerText=`Nv.${lv+1} · ${LEVELS[lv].name}`;
+    document.getElementById('levelProgress').innerText=next?`${inLevel}/${needed}`:'MAX';
+    document.getElementById('levelBarFill').style.width=pct+'%';
+    if(justLeveledUp) {
+      const bar=document.getElementById('levelBarFill');
+      bar.style.background='var(--gold)';
+      setTimeout(()=>bar.style.background='var(--accent)',800);
+    }
+  }
+  function updateXPUI() {
+    document.getElementById('xpText').innerText=`${xp} / 2000 XP`;
+    document.getElementById('xpBarMain').style.width=Math.min(100,(xp/2000*100))+'%';
+    const r=document.getElementById('rankDisp');
+    r.innerText=xp>1800?"CHEF LEGENDARIO":xp>1200?"MAESTRO SALSERO":xp>500?"COCINERO EXPERTO":"APRENDIZ";
+  }
+  function setDiff(v,el) {
+    sounds.click(); timeLimit=v;
+    document.querySelectorAll('.btn-diff').forEach(b=>b.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  window.addEventListener('load',()=>{
+    updateXPUI();
+    setTimeout(()=>{
+      document.getElementById('splash').classList.add('hidden');
+      setTimeout(()=>switchScreen('scrStart'),700);
+    },4000);
+  });
+
+  function switchScreen(targetId) {
+    ['scrStart','scrGame','scrEnd'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(id===targetId){ el.classList.remove('exit'); el.classList.add('active'); }
+      else if(el.classList.contains('active')){ el.classList.remove('active'); el.classList.add('exit'); }
+    });
+  }
+
+  document.getElementById('btnStartGame').onclick=()=>{ if(audioCtx.state==='suspended') audioCtx.resume(); sounds.click(); initGame(); };
+
+  function initGame() {
+    score=0; lives=3; current=0; streak=0; isProcessing=false; correctCount=0;
+    shuffledDeck=[...POOL].sort(()=>Math.random()-0.5);
+    hideStreakBadge();
+    const container=document.getElementById('quiz-content');
+    container.className=''; container.style.opacity=''; container.style.transform='';
+    switchScreen('scrGame'); loadQ();
+  }
+
+  function loadQ() {
+    const container=document.getElementById('quiz-content');
+    container.className='slide-in'; isProcessing=false;
+    setTimeout(()=>{
+      if(current>=shuffledDeck.length||lives<=0) return endGame(lives>0);
+      container.className='';
+      const qData=shuffledDeck[current];
+      document.getElementById('qText').innerText=qData.q;
+      animateScore(document.getElementById('scoreDisp'),score);
+      updateLevelUI();
+      const livesEl=document.getElementById('livesDisp');
+      livesEl.innerText="❤️".repeat(lives)+"🖤".repeat(3-lives);
+      const box=document.getElementById('optsBox');
+      box.innerHTML='';
+      document.getElementById('tBar').className='timer-bar';
+      let answers=qData.a.map((text,i)=>({text,isCorrect:i===qData.c}));
+      answers.sort(()=>Math.random()-0.5);
+      const fragment=document.createDocumentFragment();
+      const btns=answers.map(opt=>{
+        const btn=document.createElement('button');
+        btn.className='btn-opt'; btn.innerText=opt.text;
+        btn.style.cssText='opacity:0;transform:translateY(10px);transition:none;';
+        btn.addEventListener('mousemove',e=>{
+          const r=btn.getBoundingClientRect();
+          btn.style.setProperty('--rx',((e.clientX-r.left)/r.width*100)+'%');
+          btn.style.setProperty('--ry',((e.clientY-r.top)/r.height*100)+'%');
+        });
+        btn.onclick=e=>check(opt.isCorrect,btn,e);
+        fragment.appendChild(btn); return btn;
+      });
+      box.appendChild(fragment);
+      requestAnimationFrame(()=>{
+        btns.forEach((btn,idx)=>{
+          btn.style.transition='opacity 0.28s ease, transform 0.32s cubic-bezier(0.34,1.56,0.64,1)';
+          btn.style.transitionDelay=(idx*60)+'ms';
+          btn.style.opacity='1'; btn.style.transform='translateY(0)';
+        });
+      });
+      requestAnimationFrame(()=>requestAnimationFrame(startTimer));
+    },320);
+  }
+
+  function startTimer() {
+    clearInterval(timer); cancelAnimationFrame(timer);
+    const tBar=document.getElementById('tBar'), duration=timeLimit*1000;
+    let startTs=null, lastTick=-1;
+    function frame(ts) {
+      if(!startTs) startTs=ts;
+      const elapsed=ts-startTs, l=Math.max(0,100-(elapsed/duration)*100);
+      tBar.style.width=l+'%';
+      if(l<=40&&!tBar.classList.contains('warning')&&!tBar.classList.contains('danger')) tBar.classList.add('warning');
+      if(l<=15&&!tBar.classList.contains('danger')){ tBar.classList.remove('warning'); tBar.classList.add('danger'); }
+      if(l<=15){ const tickSlot=Math.floor(elapsed/1000); if(tickSlot!==lastTick){ lastTick=tickSlot; sounds.tick(); } }
+      if(l<=0){ check(false,null,null); return; }
+      timer=requestAnimationFrame(frame);
+    }
+    timer=requestAnimationFrame(frame);
+  }
+
+  function spawnConfetti(x,y) {
+    const colors=['#34d399','#fb923c','#fca5a5','#e03a2f','#ffffff'];
+    const frag=document.createDocumentFragment();
+    for(let i=0;i<12;i++){
+      const el=document.createElement('div'); el.className='confetti-piece';
+      el.style.background=colors[i%colors.length]; el.style.left=x+'px'; el.style.top=y+'px';
+      const angle=(i/12)*Math.PI*2+(Math.random()*0.5), dist=50+Math.random()*80;
+      el.style.setProperty('--fx',(Math.cos(angle)*dist)+'px');
+      el.style.setProperty('--fy',(Math.sin(angle)*dist+50)+'px');
+      el.style.setProperty('--rot',(Math.random()*600-300)+'deg');
+      el.style.setProperty('--dur',(0.45+Math.random()*0.45)+'s');
+      el.style.borderRadius=i%3===0?'50%':'2px'; frag.appendChild(el);
+    }
+    document.body.appendChild(frag);
+    setTimeout(()=>document.querySelectorAll('.confetti-piece').forEach(e=>e.remove()),1000);
+  }
+
+  function spawnConfettiGlobal() {
+    const colors=['#34d399','#fb923c','#fca5a5','#e03a2f','#ffffff','#ffd700'];
+    const frag=document.createDocumentFragment();
+    for(let i=0;i<24;i++){
+      const el=document.createElement('div'); el.className='confetti-piece';
+      el.style.background=colors[i%colors.length];
+      el.style.left=(8+(i/24)*84)+'vw'; el.style.top='-10px';
+      el.style.width=(5+Math.random()*6)+'px'; el.style.height=(5+Math.random()*6)+'px';
+      el.style.setProperty('--fx',(Math.random()*50-25)+'px');
+      el.style.setProperty('--fy',(100+Math.random()*160)+'px');
+      el.style.setProperty('--rot',(Math.random()*600-300)+'deg');
+      el.style.setProperty('--dur',(0.7+Math.random()*0.7)+'s');
+      el.style.animationDelay=(i*28)+'ms'; el.style.borderRadius=i%3===0?'50%':'3px';
+      frag.appendChild(el);
+    }
+    document.body.appendChild(frag);
+    setTimeout(()=>document.querySelectorAll('.confetti-piece').forEach(e=>e.remove()),2200);
+  }
+
+  function createFloatingPoint(x,y,text='+100',cls='floating-point') {
+    const el=document.createElement('div'); el.className=cls; el.innerText=text;
+    el.style.left=x+'px'; el.style.top=y+'px'; document.body.appendChild(el);
+    setTimeout(()=>el.remove(),1000);
+  }
+
+  function updateStreakBadge() {
+    const badge=document.getElementById('streak-badge');
+    document.getElementById('streakNum').innerText='x'+streak;
+    if(streak>=2){
+      badge.classList.add('visible'); badge.classList.remove('pulse');
+      void badge.offsetWidth; badge.classList.add('pulse');
+      if(streak>=7){ badge.style.background='linear-gradient(135deg,#fb923c,#e03a2f)'; badge.style.color='#fff'; }
+      else if(streak>=5){ badge.style.background='linear-gradient(135deg,#e03a2f,#800000)'; badge.style.color='#fff'; }
+      else { badge.style.background='linear-gradient(135deg,#fca5a5,#7a2020)'; badge.style.color='#000'; }
+    } else { badge.classList.remove('visible'); }
+  }
+  function hideStreakBadge() { document.getElementById('streak-badge').classList.remove('visible'); }
+
+  function check(isCorrect,btn,event) {
+    if(isProcessing) return;
+    isProcessing=true; cancelAnimationFrame(timer); clearInterval(timer);
+    document.querySelectorAll('.btn-opt').forEach(b=>b.disabled=true);
+    if(isCorrect){
+      sounds.correct(); score+=100; streak++; correctCount++;
+      const justLeveledUp=correctCount>0&&correctCount%5===0&&correctCount<=LEVELS[LEVELS.length-1].min+5;
+      updateLevelUI(justLeveledUp);
+      if(justLeveledUp){ const lv=getCurrentLevel(); sounds.streakEpic(); showReward(`⬆️ NIVEL ${lv+1} · ${LEVELS[lv].name}`,'var(--gold)',100); spawnConfettiGlobal(); }
+      if(btn){
+        btn.classList.add('correct');
+        const rect=btn.getBoundingClientRect(), cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+        spawnConfetti(cx,cy); createFloatingPoint(cx,rect.top-10,'+100','floating-point');
+      }
+      const card=document.getElementById('gameCard');
+      card.classList.remove('correct-glow','wrong-glow'); void card.offsetWidth; card.classList.add('correct-glow');
+      setTimeout(()=>{ const s=document.getElementById('scoreDisp'); s.classList.remove('pop'); void s.offsetWidth; s.classList.add('pop'); setTimeout(()=>s.classList.remove('pop'),400); },180);
+      if(streak===3){ sounds.streak(); showReward("🔥 IMPARABLE +50 XP","var(--cyan)",50); }
+      if(streak===5){ sounds.streakEpic(); showReward("⚡ LEGENDARIO +150 XP","var(--accent)",150); spawnConfettiGlobal(); }
+      if(streak===7){ sounds.streakEpic(); showReward("👑 PERFECCIÓN +300 XP","var(--gold)",300); spawnConfettiGlobal(); }
+      updateStreakBadge();
+      setTimeout(()=>{ document.getElementById('quiz-content').className='slide-out'; setTimeout(()=>{ current++; loadQ(); },300); },800);
+    } else {
+      streak=0; lives--; hideStreakBadge();
+      const card=document.getElementById('gameCard');
+      card.classList.remove('correct-glow','wrong-glow'); void card.offsetWidth; card.classList.add('shake','wrong-glow');
+      const flash=document.getElementById('error-flash');
+      flash.classList.remove('active'); void flash.offsetWidth; flash.classList.add('active');
+      setTimeout(()=>flash.classList.remove('active'),600);
+      if(btn){ btn.classList.add('wrong'); if(event) createFloatingPoint(event.clientX,event.clientY,'✕','floating-wrong'); }
+      const correctText=shuffledDeck[current].a[shuffledDeck[current].c];
+      document.querySelectorAll('.btn-opt').forEach(b=>{ if(b.innerText===correctText) b.classList.add('correct'); });
+      const livesEl=document.getElementById('livesDisp');
+      livesEl.innerText="❤️".repeat(lives)+"🖤".repeat(3-lives);
+      livesEl.classList.remove('lose-life'); void livesEl.offsetWidth; livesEl.classList.add('lose-life');
+      setTimeout(()=>livesEl.classList.remove('lose-life'),400);
+      if(lives<=0) sounds.gameover(); else sounds.wrong();
+      setTimeout(()=>{ card.classList.remove('shake'); if(lives<=0) endGame(false); else { document.getElementById('quiz-content').className='slide-out'; setTimeout(()=>{ current++; loadQ(); },300); } },1600);
+    }
+  }
+
+  function showReward(msg,bgColor,bonusXP) {
+    const pop=document.getElementById('reward-popup');
+    pop.innerText=msg; pop.style.background=bgColor;
+    pop.style.color=bgColor==='var(--gold)'?'#000':(bgColor==='var(--cyan)'?'#000':'#fff');
+    pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show');
+    xp+=bonusXP; setTimeout(()=>pop.classList.remove('show'),2200);
+  }
+
+  function animateScore(obj,endVal) {
+    let startVal=parseInt(obj.innerText)||0; if(startVal===endVal) return;
+    let duration=500, startTime=null;
+    const step=ts=>{ if(!startTime) startTime=ts; const p=Math.min((ts-startTime)/duration,1); obj.innerText=Math.floor(p*(endVal-startVal)+startVal); if(p<1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
+
+  function restartGame() {
+    sounds.click();
+    ['scrStart','scrGame','scrEnd'].forEach(id=>{ const el=document.getElementById(id); el.classList.remove('active','exit'); });
+    switchScreen('scrStart');
+  }
+
+  function endGame(isWin) {
+    switchScreen('scrEnd');
+    const endTitle=document.getElementById('endTitle'), endMsg=document.getElementById('endMsg');
+    if(isWin){ sounds.win(); endTitle.innerText="¡Salsa Perfecta!"; endTitle.style.color="var(--success)"; endMsg.innerText="¡Has dominado todos los secretos de la vizcaína!"; setTimeout(spawnConfettiGlobal,400); }
+    else { endTitle.innerText="Salsa Quemada"; endTitle.style.color="var(--error)"; endMsg.innerText="Demasiados errores. ¡Vuelve a los fogones!"; }
+    animateScore(document.getElementById('finalScore'),score);
+    xp+=Math.floor(score/2); localStorage.setItem('vz_xp_a4',xp); updateXPUI();
+  }
+</script>
+</body>
+</html>
